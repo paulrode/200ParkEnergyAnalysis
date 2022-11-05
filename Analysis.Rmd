@@ -31,7 +31,6 @@ options(dplyr.summarise.inform = FALSE)  # Suppress textin Knit printout.
 
 # Read in data
 
-
 'EGridFactor2030' <- 0.5
 'EGridFactor2050' <- 0.1 
 'SGridFactor2030' <- 0.94
@@ -42,15 +41,9 @@ options(dplyr.summarise.inform = FALSE)  # Suppress textin Knit printout.
 'SteamCF30' <- 0.00004493 * `SGridFactor2030` #2024 Carbon Value
 'IntensityLimit24' <- 0.00758 #2024 Limit
 'IntensityLimit30' <- 0.002690852 #2030 Limit
-
-
-# Read in data
-
+BuildingGSF <- 2993388
 Energy <- read_excel("data/EPA_Energy_By_Calendar_Month200Park.xlsx", skip = 5, col_names = TRUE, na = "NA", col_types = c("guess", "numeric", "numeric", "numeric"))
 Energy$Month <- my(Energy$Month)
-
-
-BuildingGSF <- 2993388
 
 
 #Campus EUI for each year 
