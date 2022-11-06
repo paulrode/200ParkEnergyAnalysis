@@ -83,8 +83,10 @@ UtilityData2 <- UtilityData1
   apply(UtilityData2[2], 1, function(x) {ifelse(x == "Electric_kbtu", "Elect(tCO2e)", "Steam(tCO2e)")}) -> UtilityData2[2]
   
   UtilityData2 %>% 
-  mutate(Carbon = ifelse(Item == "Elect(tCO2e)", Value * ElecCF24 / 3.4121, Value * SteamCF24))%>% 
-    ggplot(aes(x = Date, y = Carbon, fill = Item)) +
+  mutate(Carbon24 = ifelse(Item == "Elect(tCO2e)", Value * ElecCF24 / 3.4121, Value * SteamCF24)) -> UtilityData2
+    
+UtilityData2 %>% 
+    ggplot(aes(x = Date, y = Carbon24, fill = Item)) +
   geom_bar(stat = "identity", position = "stack") +
   labs( title = "Carbon Emissions by fuel type",
         subtitle = "2024 carbon coeificents with 2024 and 2030 carbon factor limits") +
@@ -100,22 +102,56 @@ UtilityData2 <- UtilityData1
 ```{r  echo=FALSE, message=FALSE, warning=FALSE, error=FALSE}
 
 #Make a Carbon table in the dataframe UtilityData1
-UtilityData4 <- UtilityData1
-  apply(UtilityData4[3], 1, function(x) {ifelse(x == "Elec(kBTU)", "Elect(tCO2e)", "Steam(tCO2e)")}) -> UtilityData4[3]
-  
-  
-  UtilityData4 %>% 
-  mutate(Carbon = ifelse(Unit == "Elec(kBTU)", Value * ElecCF30 / 3.4121, Value * SteamCF30)) %>% ggplot(aes(x = Year, y = Carbon, fill = Unit)) +
+    UtilityData2 %>% 
+  mutate(Carbon30 = ifelse(Item == "Elect(tCO2e)", Value * ElecCF30 / 3.4121, Value * SteamCF30)) -> UtilityData2
+ 
+    UtilityData2 %>%  
+  ggplot(aes(x = Date, y = Carbon30, fill = Item)) +
   geom_bar(stat = "identity", position = "stack") +
   labs( title = "Carbon Emissions by fuel type",
         subtitle = "2030 carbon coeificents with 2030 carbon factor limits") +
   labs(x = "Year", y = "tCO2e") +
   #guides(fill = FALSE) +
-  geom_hline(aes(yintercept = TotalFlArea * IntensityLimit30), linetype = "dashed", color = "blue", size = 0.5, alpha = 0.5) +
-  geom_text(aes(x = 2.1, y = TotalFlArea * IntensityLimit30, label = "2030 Carbon Limit", alpha = 0.1), hjust = 0, vjust = -.2 , color = "blue", alpha = 0.1) +
+  geom_hline(aes(yintercept = BuildingGSF * IntensityLimit30), linetype = "dashed", color = "blue", size = 0.5, alpha = 0.5) +
+  geom_text(aes(x = 2019, y = BuildingGSF * IntensityLimit30, label = "2030 Carbon Limit", alpha = 0.1), hjust = 0, vjust = -.2 , color = "blue", alpha = 0.1) +
   scale_fill_manual(values = c("#CC0033", "#FFFFCC"))
   
 ```
+
+
+
+What if all steam uses were electrified? 
+The problem is steam 
+
+```{r  echo=FALSE, message=FALSE, warning=FALSE, error=FALSE}
+
+#Make a Carbon table in the dataframe UtilityData1
+    UtilityData2 %>% 
+  mutate(Carbon30e = ifelse(Item == "Elect(tCO2e)", Carbon30, Value * ElecCF30 / 3.4121 /1.25)) -> UtilityData2
+ 
+    UtilityData2 %>%  
+  ggplot(aes(x = Date, y = Carbon30e, fill = Item)) +
+  geom_bar(stat = "identity", position = "stack") +
+  labs( title = "Carbon Emissions",
+        subtitle = "2030 picture showing with electrification") +
+  labs(x = "Year", y = "tCO2e") +
+  #guides(fill = FALSE) +
+  geom_hline(aes(yintercept = BuildingGSF * IntensityLimit30), linetype = "dashed", color = "blue", size = 0.5, alpha = 0.5) +
+  geom_text(aes(x = 2019, y = BuildingGSF * IntensityLimit30, label = "2030 Carbon Limit", alpha = 0.1), hjust = 0, vjust = -.2 , color = "blue", alpha = 0.1) +
+  scale_fill_manual(values = c("#CC0033", "#FFFFCC"))
+  
+```
+
+
+
+
+
+
+
+
+
+
+
 
 
 
