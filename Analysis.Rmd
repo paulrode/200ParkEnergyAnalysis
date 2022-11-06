@@ -1,11 +1,9 @@
 ---
-title: "R Notebook"
+title: "200 Park Avenue Energy Analysis and Local Law 97"
 output: html_notebook
 ---
 
-This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
 
-Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
 
 
 ```{r Data Setup, echo=FALSE, message=FALSE, warning=FALSE, error=FALSE}
@@ -47,35 +45,25 @@ Energy$Month <- my(Energy$Month)
 
 
 #Campus EUI for each year 
-UtilityData1 <- Energy
-
-
-UtilityData1 %>% 
-  group_by(year(Month)) %>% 
-  summarise(Steam = sum(`District Steam\n(kBtu)`), Electric = sum(`Electric - Grid
-(kBtu)`)) -> UtilityData1
-###################################################
-
-UtilityData1$`year(Month)` <- date(UtilityData1$`year(Month)`)
-gather(key = "Item", value = "Value") -> UtilityData1
-  cbind(UtilityData1, str_split_fixed(UtilityData1$Item, " ", n=2)) %>% 
-  select(-"Item") -> UtilityData1 
-  colnames(UtilityData1)  <-  c("Value", "Year", "Unit") 
-  apply(UtilityData1[3], 1, function(x) {ifelse(x == "kwh", "Elec(kBTU)", "Steam(kBTU)")}) -> UtilityData1[3]
-  
+Energy %>% 
+  group_by(Date = year(Month)) %>% 
+  summarise(Steam_kbtu = sum(`District Steam\n(kBtu)`), Electric_kbtu = sum(`Electric - Grid\n(kBtu)`)) %>% 
+  gather(key = "Item", value = "Value", -Date) %>% 
+  filter(Date > 2017 & Date< 2022) -> UtilityData1
 
   # Make an EUI plot with kBTU vales for both  electric and steam  
 UtilityData2 <- UtilityData1
-apply(UtilityData2[1], 1, function(row) row / TotalFlArea ) -> UtilityData2[1]
+apply(UtilityData2[3], 1, function(row) row / BuildingGSF ) -> UtilityData2[3]
+
+
 UtilityData2 %>% 
-  ggplot(aes(x = Year, y = Value, fill = Unit)) +
+  ggplot(aes(x = Date, y = Value, fill = Item)) +
   geom_bar(stat = "identity", position = "stack") +
-  labs( title = "Energy Use Density by fuel type for Campus",
+  labs( title = "Energy Use Density by fuel type",
         subtitle = "Units are kBTU's per year per Gross Squar Feet") +
   xlab("Year") +
   ylab("kBTU/SF") +
   scale_fill_manual(values = c("#CC0033", "#FFFFCC"))
-
 
 ```
   
@@ -91,21 +79,20 @@ The drop in energy consumption 2019 to 2020 is due primarily the last of occupan
 ```{r  echo=FALSE, message=FALSE, warning=FALSE, error=FALSE}
 
 #Make a Carbon table in the dataframe UtilityData1
-UtilityData3 <- UtilityData1
-  apply(UtilityData3[3], 1, function(x) {ifelse(x == "Elec(kBTU)", "Elect(tCO2e)", "Steam(tCO2e)")}) -> UtilityData3[3]
+UtilityData2 <- UtilityData1
+  apply(UtilityData2[2], 1, function(x) {ifelse(x == "Electric_kbtu", "Elect(tCO2e)", "Steam(tCO2e)")}) -> UtilityData2[2]
   
-  
-  UtilityData3 %>% 
-  mutate(Carbon = ifelse(Unit == "Elec(kBTU)", Value * ElecCF24 / 3.4121, Value * SteamCF24)) %>% ggplot(aes(x = Year, y = Carbon, fill = Unit)) +
+  UtilityData2 %>% 
+  mutate(Carbon = ifelse(Item == "Elect(tCO2e)", Value * ElecCF24 / 3.4121, Value * SteamCF24))%>% 
+    ggplot(aes(x = Date, y = Carbon, fill = Item)) +
   geom_bar(stat = "identity", position = "stack") +
   labs( title = "Carbon Emissions by fuel type",
         subtitle = "2024 carbon coeificents with 2024 and 2030 carbon factor limits") +
   labs(x = "Year", y = "tCO2e") +
-  #guides(fill = FALSE) +
-  geom_hline(aes(yintercept = TotalFlArea * IntensityLimit24), color = "blue", linetype = "dashed", size = 0.75) +
-  geom_text(aes(x = 2, y = TotalFlArea * IntensityLimit24, label = "2024 Carbon Limit"), hjust = 1, vjust = 1.25 , color = "blue") +
-  geom_hline(aes(yintercept = TotalFlArea * IntensityLimit30), linetype = "dashed", color = "blue", size = 0.5, alpha = 0.5) +
-  geom_text(aes(x = 2.1, y = TotalFlArea * IntensityLimit30, label = "2030 Carbon Limit", alpha = 0.1), hjust = 0, vjust = -.2 , color = "blue", alpha = 0.1) +
+  geom_hline(aes(yintercept = BuildingGSF * IntensityLimit24), color = "blue", linetype = "dashed", size = 0.75) +
+  geom_text(aes(x = 2019, y = BuildingGSF * IntensityLimit24, label = "2024 Carbon Limit"), hjust = 1, vjust = 1.25 , color = "blue") +
+  geom_hline(aes(yintercept = BuildingGSF * IntensityLimit30), linetype = "dashed", color = "blue", size = 0.5, alpha = 0.5) +
+  geom_text(aes(x = 2020, y = BuildingGSF * IntensityLimit30, label = "2030 Carbon Limit", alpha = 0.1), hjust = 0, vjust = -.2 , color = "blue", alpha = 0.1) +
   scale_fill_manual(values = c("#CC0033", "#FFFFCC"))
   
 ```
